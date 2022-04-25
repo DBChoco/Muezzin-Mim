@@ -1,0 +1,38 @@
+/*
+Source: https://fonts.qurancomplex.gov.sa/ & https://cdn.jsdelivr.net/gh/fawazahmed0/quran-api@1/fonts.json
+*/
+
+@font-face {
+    font-family: arabic-symbols;
+    src: url(arabic/Basmalah\ Ver01.otf);
+}
+
+@font-face {
+    font-family: text_uthmani;
+    src: url(arabic/hafs-uthmanic-v14-full-org.ttf);
+}
+
+@font-face {
+    font-family: text_uthmani_simple;
+    src: url(arabic/hafs-uthmanic-v14-full-org.ttf);
+}
+
+@font-face {
+    font-family: text_indopak;
+    src: url(arabic/al-qalam-quran-majeed-2-org.ttf);
+}
+
+@font-face {
+    font-family: text_imlaei;
+    src: url(arabic/_PDMS_Saleem_QuranFont.ttf);
+}
+
+@font-face {
+    font-family: text_imlaei_simple;
+    src: url(arabic/_PDMS_Saleem_QuranFont.ttf);
+}
+
+@font-face {
+    font-family: quicksand;
+    src: url(Quicksand-VariableFont_wght.ttf);
+}
