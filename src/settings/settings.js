@@ -1,7 +1,6 @@
 var timeDisplay, language, adhanFile, bgImage, sunnahTimes, settings, weather, 
-calculationMethod, quran;
+calculationMethod;
 var lat,lon;
-var fromQuran = false;
 
 window.addEventListener('DOMContentLoaded', () => { 
   loadSettings()
@@ -12,7 +11,6 @@ window.addEventListener('DOMContentLoaded', () => {
   addThemeListener()
   setKeyPress();
   addLangListener()
-  loadQueryString()
   loadFont()
 })
 
@@ -65,7 +63,6 @@ async function saveSettings(){
   await saveBgImage()
   await saveAdjustments()
   await saveCustomSettings()
-  await saveQuran()
 }
 
 /**
@@ -157,7 +154,6 @@ async function loadSettings(){
   loadLanguage(language)
   loadBgImage()
   disableAdhanListener()
-  await loadQuranSettings()
 }
 
 
@@ -202,12 +198,7 @@ async function returnButton(){
   set.onclick= async function(){
     await saveSettings()
     window.api.send("settingsC");
-    if (!fromQuran){
       window.location.assign("../main/index.html");
-    }
-    else{
-      window.location.assign("../quran/quran.html");
-    }
   }
 }
 
@@ -627,7 +618,6 @@ function loadLanguage(lang){
   document.getElementById("v-pills-appearance-tab").innerHTML = '<i class="fa-solid fa-palette"></i>  ' +  window.api.getLanguage(lang, "appearance");
   document.getElementById("v-pills-advanced-tab").innerHTML = '<i class="fa-solid fa-sliders"></i>  ' + window.api.getLanguage(lang, "advanced");
   document.getElementById("v-pills-adjustments-tab").innerHTML = '<i class="fa-solid fa-clock"></i>  ' + window.api.getLanguage(lang, "adjustements");
-  document.getElementById("v-pills-quran-tab").innerHTML = '<i class="fa-solid fa-book-quran"></i>  ' + window.api.getLanguage(lang, "quran");
 
   document.getElementById("return").innerHTML = '<i class="fa fa-arrow-circle-left"></i>  ' + window.api.getLanguage(lang, "return");
 
@@ -716,16 +706,6 @@ function loadLanguage(lang){
   document.getElementById("adhanMecca").innerHTML = window.api.getLanguage(lang, "AdhanMecca");
   document.getElementById("adhanAqsa").innerHTML  = window.api.getLanguage(lang, "adhanAqsa");
 
-  document.getElementById("quranFontText").innerHTML  = window.api.getLanguage(lang, "font");
-  document.getElementById("quranFontSizeText").innerHTML  = window.api.getLanguage(lang, "fontsize");
-  document.getElementById("translationText").innerHTML  = window.api.getLanguage(lang, "translation");
-  document.getElementById("showTranslationCheckText").innerHTML  = window.api.getLanguage(lang, "showTrans");
-  document.getElementById("quranLangCheckText").innerHTML  = window.api.getLanguage(lang, "diffLang");
-  document.getElementById("translationFontSizeText").innerHTML  = window.api.getLanguage(lang, "fontsize");
-  document.getElementById("transliterationText").innerHTML  = window.api.getLanguage(lang, "transliteration");
-  document.getElementById("showTransliterationCheckText").innerHTML  = window.api.getLanguage(lang, "showTransliteration");
-  document.getElementById("transliterationFontSizeText").innerHTML  = window.api.getLanguage(lang, "fontsize");
-
   document.getElementById("weatherText").innerHTML  = window.api.getLanguage(lang, "weather");
   document.getElementById("weatherCheckText").innerHTML  = window.api.getLanguage(lang, "showWeather");
   document.getElementById("unitListText").innerHTML  = window.api.getLanguage(lang, "units");
@@ -735,8 +715,6 @@ function loadLanguage(lang){
 
   document.getElementById("adhanAhmed").innerText = window.api.getLanguage(lang, "adhan") + " - " + window.api.getLanguage(lang, "ahmedNufeis")
   document.getElementById("customAdhanFajrText").innerHTML  = window.api.getLanguage(lang, "customFajr"); 
-  document.getElementById("recitationText").innerHTML  = window.api.getLanguage(lang, "recitation"); 
-  document.getElementById("reciterText").innerHTML  = window.api.getLanguage(lang, "reciter"); 
 }
 
 
@@ -861,229 +839,6 @@ async function saveAdjustments(){
   var adjustements = [adjCheck, Math.round(fajrAdj),Math.round(dhuhrAdj),Math.round(asrAdj),Math.round(maghribrAdj),Math.round(ishaAdj)]
   
   await window.api.setToStore('adj', adjustements);
-}
-
-
-/**
-* Loads all elements related to the Quran reader
-*/
-async function loadQuranSettings(){
-  let quranFontsize = document.getElementById("quranFontSize")
-  let reciterList = document.getElementById("reciter")
-  let showTranslationDiv = document.getElementById("showTranslationCheck")
-  let diffLangDiv = document.getElementById("quranLangCheck")
-  let quranLangListDiv = document.getElementById("quranLangList")
-  let transListDiv = document.getElementById("translationList")
-  let transFontSizeDiv = document.getElementById("translationFontSize")
-  let showTransliterationDiv = document.getElementById("showTransliterationCheck")
-  let transliFontSizeDiv = document.getElementById("transliterationFontSize")
-
-  quran = await window.api.getFromStore('quran', {
-    font: "text_uthmani",
-    fontsize: 42,
-    recitation:{
-      reciter: 7,
-      volume: 50
-    },
-    translation:{
-        show: true,
-        lang: {
-          enabled: false,
-          lang: "en"
-        },
-        trans: 131,
-        fontsize: 14
-    },
-    transliteration:{
-        show: true,
-        fontsize: 14
-    },
-  })
-
-  loadTranslationList()
-  loadReciterList()
-  loadLanguageList()
-
-  selectFromList(document.getElementById("fontList"), quran.font)
-  quranFontsize.value = quran.fontsize;
-  showTranslationDiv.checked = quran.translation.show;
-  diffLangDiv.checked = quran.translation.lang.enabled;
-  transFontSizeDiv.value = quran.translation.fontsize;
-  showTransliterationDiv.checked = quran.transliteration.show;
-  transliFontSizeDiv.value = quran.transliteration.fontsize;
-
-  quranDisableListeners()
-
-
-   /**
-  * Loads the list of languages from a downloaded JSON and fill an inputList
-  */
-  function loadLanguageList(){
-    fetch('../../ressources/quran/languages.json')
-    .then(reponse => reponse.json())
-    .then(json => {
-      for (transLang of json["languages"]){
-        var option = document.createElement("option")
-        option.dataset.language_name = (transLang["translated_name"]["name"]).toLowerCase()
-        option.value = transLang["iso_code"]
-        option.innerText = transLang["native_name"] != "" ? transLang["native_name"] : transLang["name"]
-        
-        quranLangListDiv.appendChild(option)
-      }
-      loadDefaultLang()
-    })
-    quranLangListDiv.addEventListener("change", function(){
-      hideTranslations()
-    })
-    diffLangDiv.addEventListener("change", function(){
-      if (!diffLangDiv.checked){
-        loadDefaultLang()
-      }
-    })
-    document.getElementById("langlist").addEventListener("change",function(){
-      if (!diffLangDiv.checked){
-        console.log("YES")
-        loadDefaultLang()
-      }
-    })
-  }
-
-  /**
-  * This function is called when "Different languages from app" is disabled, it loads the default value (selected general) and changes it and the translation list
-  */
-  function loadDefaultLang(language = undefined){
-    if (language != undefined){
-      if ((language.value == quran.translation.lang.lang && diffLangDiv.checked) || 
-          (!diffLangDiv.checked && language.value == document.getElementById("langlist").options[document.getElementById("langlist").selectedIndex].value)) 
-          language.selected = true;
-          hideTranslations()
-    }
-    else{
-      for (let language of quranLangListDiv){
-        if ((language.value == quran.translation.lang.lang && diffLangDiv.checked) || 
-            (!diffLangDiv.checked && language.value == document.getElementById("langlist").options[document.getElementById("langlist").selectedIndex].value)) 
-            language.selected = true;
-            hideTranslations()
-      }
-    }
-  }
-
-  /**
-  * Loads the list of translations from a downloaded JSON and fills an inputList
-  */
-  function loadTranslationList(){
-    fetch('../../ressources/quran/translations.json')
-    .then(reponse => reponse.json())
-    .then(json => {
-      for (translation of json["translations"]){
-        var option = document.createElement("option")
-        option.dataset.lang = translation["language_name"]
-        option.value = translation["id"]
-        option.innerText = translation["name"]
-        if (option.value == quran.translation.trans) option.selected = true;
-        transListDiv.appendChild(option)
-      }
-    })
-    transListDiv.addEventListener("change", function(){
-      quran.translation.trans = transListDiv.options[transListDiv.selectedIndex].value;
-    })
-  }
-
-    /**
-  * Loads the list of reciters from a downloaded JSON and fills an inputList
-  */
-  function loadReciterList(){
-    fetch('../../ressources/quran/recitations.json')
-    .then(reponse => reponse.json())
-    .then(json => {
-      console.log(json)
-      for (reciter of json["recitations"]){
-        var option = document.createElement("option")
-        option.value = reciter["id"]
-        reciter["style"] != null ? option.innerText = reciter["reciter_name"] + " - " + reciter["style"] : option.innerText = reciter["reciter_name"]
-        if (option.value == quran.recitation.reciter) option.selected = true;
-        reciterList.appendChild(option)
-      }
-    })
-    if (reciterList.selectedIndex == -1) reciterList.selectedIndex = 1
-    reciterList.addEventListener("change", function(){
-      quran.recitation.reciter = reciterList.options[transListDiv.selectedIndex].value;
-    })
-  }
-
-  /**
-  * Adds listeners to disable some inputs
-  */
-  function quranDisableListeners(){
-    showTranslationDiv.addEventListener("change", function(){
-      diffLangDiv.disabled = !showTranslationDiv.checked;
-      quranLangListDiv.disabled = !showTranslationDiv.checked || !diffLangDiv.checked;
-      transListDiv.disabled = !showTranslationDiv.checked;
-      transFontSizeDiv.disabled = !showTranslationDiv.checked;
-    })
-    diffLangDiv.addEventListener("change", function(){
-      quranLangListDiv.disabled = !diffLangDiv.checked
-    })
-    diffLangDiv.disabled = !showTranslationDiv.checked;
-    quranLangListDiv.disabled = !showTranslationDiv.checked || !diffLangDiv.checked;
-    transListDiv.disabled = !showTranslationDiv.checked;
-    transFontSizeDiv.disabled = !showTranslationDiv.checked;
-    
-    showTransliterationDiv.addEventListener("change", function(){
-      transliFontSizeDiv.disabled = !showTransliterationDiv.checked
-    })
-    transliFontSizeDiv.disabled = !showTransliterationDiv.checked
-  }
-
-  /**
-  * Checks the selected language and hides translations that are not in that language
-  */
-  function hideTranslations(){
-    var selectedOne = false;
-    let selectedLang = quranLangListDiv.options[quranLangListDiv.selectedIndex].dataset.language_name
-    for (translation of transListDiv){
-      translation.dataset.lang == selectedLang ? translation.style.display = "block" :  translation.style.display = "none" 
-      if ((translation.value == quran.translation.trans || !selectedOne) && translation.style.display == "block"){
-        translation.selected = true;
-        selectedOne = true;
-      }
-    }
-  }
-}
-
-async function saveQuran(){
-  let volume = await window.api.getFromStore('quran.recitation.volume', 50)
-  let newQuran = {
-    font: document.getElementById("fontList").value,
-    fontsize: document.getElementById("quranFontSize").value,
-    recitation:{
-      reciter: document.getElementById("reciter").value,
-      volume: volume,
-    },
-    translation:{
-        show: document.getElementById("showTranslationCheck").checked,
-        lang: {
-          enabled: document.getElementById("quranLangCheck").checked,
-          lang: document.getElementById("quranLangList").options[document.getElementById("quranLangList").selectedIndex].value
-        },
-        trans: document.getElementById("translationList").options[document.getElementById("translationList").selectedIndex].value,
-        fontsize: document.getElementById("translationFontSize").value
-    },
-    transliteration:{
-        show: document.getElementById("showTransliterationCheck").checked,
-        fontsize: document.getElementById("transliterationFontSize").value
-    },
-  }
-  if (quran != newQuran) await window.api.setToStore("quran", newQuran)
-}
-
-function loadQueryString(){
-  const queryString = window.location.search;
-  if (queryString == "?page=quran"){
-    var quranTab = new bootstrap.Tab(document.getElementById("v-pills-quran-tab"))
-    quranTab.show();
-    fromQuran = true;
-  }
 }
 
 function addChangeListeners(){

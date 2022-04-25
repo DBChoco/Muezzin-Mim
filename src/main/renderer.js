@@ -566,7 +566,6 @@ function loadLang(){
   document.getElementById('settingsWheel').innerHTML = '<i class="fa fa-cog" aria-hidden="true"></i>  ' +  window.api.getLanguage(lang, 'settings')
   document.getElementById('motn').innerText = window.api.getLanguage(lang, 'motn')
   document.getElementById('totn').innerText = window.api.getLanguage(lang, 'totn')
-  document.getElementById('quranButton').innerHTML = '<i class="fa-solid fa-book-quran"></i>  ' + window.api.getLanguage(lang, 'quran')
 }
 
 function setupButtonListeners(){
@@ -579,9 +578,6 @@ function setupButtonListeners(){
   document.getElementById('settingsWheel').addEventListener("click", function(){
     window.api.send("settingsO");
     window.location.href = "../settings/settings.html";
-  })
-  document.getElementById('quranButton').addEventListener("click", function(){
-    window.location.href = "../quran/quran.html";
   })
 }
 

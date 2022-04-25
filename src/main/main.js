@@ -354,7 +354,6 @@ async function loadSettings(){
   });
 
   lang = await store.get('language', 'en');
-  loadLang();
   customValues = await store.get('customSettings', [false, 0,0,0]);
   delay = await store.get('delay', [false, 0]);
 
@@ -788,14 +787,6 @@ function trayPrayerTimes(){
   ])
   tray.setContextMenu(contextMenu)
 
-  console.log(langFajr + ": " + changeclockDisplay(prayerTimes.fajr, timeDisplay.clockFormat) + "\n" +
-  langSunrise + ": " + changeclockDisplay(prayerTimes.sunrise, timeDisplay.clockFormat) + "\n" +
-  langDhuhr + ": " + changeclockDisplay(prayerTimes.dhuhr, timeDisplay.clockFormat) + "\n" +
-  langAsr + ": " + changeclockDisplay(prayerTimes.asr, timeDisplay.clockFormat) + "\n" +
-  langMaghrib + ": " + changeclockDisplay(prayerTimes.maghrib, timeDisplay.clockFormat) + "\n" +
-  langIsha + ": " + changeclockDisplay(prayerTimes.isha, timeDisplay.clockFormat)
-  )
-  
   function changeclockDisplay(date, timeformat){
     if (timeformat == 24){
       return show0(date.getHours()) + ":" + show0(date.getMinutes())
