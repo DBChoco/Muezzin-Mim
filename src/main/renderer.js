@@ -3,13 +3,14 @@ var lon = 0;
 
 var timezone, timeFormat, shortTimeFormat, lang, dateFormat;
 
-var prayerTimes, calPrayers, tommorowPrayers, sunnahTimes, prayers;
+var prayerTimes, calPrayers, tommorowPrayers, sunnahTimes, prayers, delays;
 var datePick, volume;
 var loadedUI = false;
 var langFajr, langSunrise, langDhuhr, langMaghrib, langIsha, langAdhan, langNow, langTimeUntil, selectedPrayer;
 var sunnahTimes, motnCheckOG, totnCheckOG, totn, motn;
 var athanProgress = 0;
 var weatherSettings;
+var adhan = false; iqama = false;
 
 
 var loaded = true;
@@ -27,9 +28,6 @@ window.addEventListener('loadedSettings', () => {
   loadClock();
   loadHijriDate();
 
-  datePick = document.getElementById('calendar');
-  loadCalendar()
-
   getTomorrowPrayers()
   loadPrayers()
   prayers = nextPrayer();
@@ -37,7 +35,6 @@ window.addEventListener('loadedSettings', () => {
   setupWeather()
 
   loadFont()
-
 
   const interval = setInterval(function() {
     loadClock()
@@ -159,48 +156,20 @@ Object.defineProperty(String.prototype, 'capitalize', {
 });
 
 
-//Picks the date from the calendar and adds a listener to the calendar, when the dates changes it sends a reuquest for time prayers.
-function loadCalendar(){
-  Date.prototype.toDateInputValue = (function() {
-    var local = new Date(this);
-    local.setMinutes(this.getMinutes() - this.getTimezoneOffset());
-    return local.toJSON().slice(0,10);
-  });
-  datePick.value = new Date().toDateInputValue();
-  //window.api.send('date-request', datePick.value);
-  datePick.addEventListener('change', function(){
-      window.api.send('date-request', datePick.value);
-  })
-
-  
-  datePick.lang = lang
-
-  function setupCalendarButton(){
-    setCalendarButtonValue()
-    calendarButton.addEventListener("click", function(){
-      datePick.showPicker() //This is currently not supported.
-    })
-  }
-
-  function setCalendarButtonValue(){
-    let date = datePick.value.split("-")
-    if (dateFormat == "DD/MM/YYYY") calendarButton.value = date[2] + "/" + date[1] + "/" + date[0]
-  }
-}
-
-
 //Load all the prayers of the day and shows them on the screen
 function loadPrayers(){
-  if (datePick.value == new Date().toDateInputValue()){
-    calPrayers = prayerTimes
-  }
-  if (calPrayers != undefined){
-    document.getElementById("fajrTime").innerText = changeclockDisplay(calPrayers.fajr, shortTimeFormat);
-    document.getElementById("sunriseTime").innerText = changeclockDisplay(calPrayers.sunrise, shortTimeFormat);
-    document.getElementById("dhuhrTime").innerText = changeclockDisplay(calPrayers.dhuhr, shortTimeFormat);
-    document.getElementById("asrTime").innerText = changeclockDisplay(calPrayers.asr, shortTimeFormat);
-    document.getElementById("maghribTime").innerText = changeclockDisplay(calPrayers.maghrib, shortTimeFormat);
-    document.getElementById("ishaTime").innerText = changeclockDisplay(calPrayers.isha, shortTimeFormat);
+  if (prayerTimes != undefined){
+    document.getElementById("fajrTime").innerText = changeclockDisplay(prayerTimes.fajr, shortTimeFormat);
+    document.getElementById("fajrDelay").innerText = "+" + delays[0] + "'";
+    document.getElementById("sunriseTime").innerText = changeclockDisplay(prayerTimes.sunrise, shortTimeFormat);
+    document.getElementById("dhuhrTime").innerText = changeclockDisplay(prayerTimes.dhuhr, shortTimeFormat);
+    document.getElementById("dhuhrDelay").innerText = "+" + delays[1] + "'";
+    document.getElementById("asrTime").innerText = changeclockDisplay(prayerTimes.asr, shortTimeFormat);
+    document.getElementById("asrDelay").innerText = "+" + delays[2] + "'";
+    document.getElementById("maghribTime").innerText = changeclockDisplay(prayerTimes.maghrib, shortTimeFormat);
+    document.getElementById("maghribDelay").innerText = "+" + delays[3] + "'";
+    document.getElementById("ishaTime").innerText = changeclockDisplay(prayerTimes.isha, shortTimeFormat);
+    document.getElementById("ishaDelay").innerText = "+" + delays[4] + "'";
     if (sunnahTimes.totn && totn != undefined){
       document.getElementById("totnTime").innerText = changeclockDisplay(totn, shortTimeFormat);
     }
@@ -235,6 +204,8 @@ async function loadSettings(){
       unit: "C"
     })
 
+    delays = await window.api.getFromStore("delays", [5, 10, 10, 5, 10])
+
     loadLang()
     await hidePlayer()
     await loadClockDisplay()
@@ -250,11 +221,26 @@ function loadNextPrayer(){
     var timeUntilCurrentPrayer = timeUntilPrayer(prayers[0])
     //console.log(timeUntilCurrentPrayer)
     //if (timeUntilNextPrayer[0] <= 0 && timeUntilNextPrayer[1] <= 0 && timeUntilNextPrayer[2] <= 3) prayers = nextPrayer();
-    if (athanProgress != 0 && timeUntilCurrentPrayer[0] == -1 && timeUntilCurrentPrayer[1] >= -5){
+    if (timeUntilCurrentPrayer[0] == -1 && timeUntilCurrentPrayer[1] >= -4){ //Adhan takes 4 minutes
       document.getElementById("timeLeft").innerText = langAdhan
+      adhan = true;
     }
-    else if(timeUntilCurrentPrayer[0] == -1 && timeUntilCurrentPrayer[1] >= -10){ //-1 because math.floor
-        document.getElementById("timeLeft").innerText = langNow + ": " + prayers[2];
+    else if(timeUntilCurrentPrayer[0] == -1 && adhan){ //-1 because math.floor // 
+      if (prayers[2] == langFajr){
+        if (timeUntilCurrentPrayer[1] >= -1 * delays[0]){
+          document.getElementById("timeLeft").innerText = "Iqama in " + iqamaTime((delays[0])-(timeUntilCurrentPrayer[1]*-1), 60-(timeUntilCurrentPrayer[2]*-1))
+        }
+      }
+      else if (prayers[2] == langDhuhr){
+        if (timeUntilCurrentPrayer[1] >= -1 * delays[1]){
+          document.getElementById("timeLeft").innerText = "Iqama in " + iqamaTime((delays[1])-(timeUntilCurrentPrayer[1]*-1), 60-(timeUntilCurrentPrayer[2]*-1))
+        }
+      }
+      
+      else {
+        adhan = false;
+        //ADD NOW IQAMA MESSAGE
+      }
     }
     else{
       var timeUntilNextPrayer = timeUntilPrayer(prayers[1])
@@ -267,6 +253,14 @@ function loadNextPrayer(){
   }
 }
 
+function iqamaTime(minutes, seconds){
+  if (seconds == 60){
+    seconds = 0;
+    minutes ++;
+  }
+  var res = intToHour([0, minutes, seconds])
+  return res.substring(3)
+}
 
 
 function setProgress(){
@@ -863,14 +857,17 @@ function setupBorders(inCalendar = false){
     if (!totnCheckOG && !motnCheckOG){
       document.getElementById("isha").style.borderBottom = "none"
       document.getElementById("ishaTime").style.borderBottom = "none"
+      document.getElementById("ishaDelay").style.borderBottom = "none"
     }
     else if (totnCheckOG){
       document.getElementById("totn").style.borderBottom = "none"
       document.getElementById("totnTime").style.borderBottom = "none"
+      document.getElementById("totnDelay").style.borderBottom = "none"
     }
     else {
       document.getElementById("motn").style.borderBottom = "none"
       document.getElementById("motnTime").style.borderBottom = "none"
+      document.getElementById("motnDelay").style.borderBottom = "none"
     }
   }
   else{

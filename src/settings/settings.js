@@ -1,4 +1,4 @@
-var timeDisplay, language, adhanFile, bgImage, sunnahTimes, settings, weather, 
+var timeDisplay, language, bgImage, sunnahTimes, settings, weather, delays, 
 calculationMethod;
 var lat,lon;
 
@@ -36,10 +36,8 @@ async function saveSettings(){
   }
 
   var newSettings = {
-    startupSound: document.getElementById("startUpSound").checked,
     notifCheck: document.getElementById("notifCheck").checked,
     systray: document.getElementById("systrayCheck").checked,
-    adhanCheck: document.getElementById("adhanCheck").checked,
     autoStart: document.getElementById("autoStartCheck").checked,
     minStart: document.getElementById("minStartCheck").checked
   }
@@ -54,12 +52,20 @@ async function saveSettings(){
     units: document.getElementById("unitList").value
   }
 
+  var newDelays = [
+    document.getElementById("fajrDelayInput").value,
+    document.getElementById("dhuhrDelayInput").value,
+    document.getElementById("asrDelayInput").value,
+    document.getElementById("maghribDelayInput").value,
+    document.getElementById("ishaDelayInput").value
+  ]
+
   if (calculationMethod != newCalculationMethod) await window.api.setToStore("calculationMethod", newCalculationMethod)
   if (settings != newSettings) await window.api.setToStore("settings", newSettings)
   if (sunnahTimes != newSunnahTimes) await window.api.setToStore("sunnahTimes", newSunnahTimes)
   if (weather != newWeather) await window.api.setToStore("weather", newWeather)
+  if (delays != newDelays) await window.api.setToStore("delays", newDelays)
 
-  await saveAdhan()
   await saveBgImage()
   await saveAdjustments()
   await saveCustomSettings()
@@ -87,10 +93,8 @@ async function loadSettings(){
   })
 
   settings = await window.api.getFromStore("settings", {
-    startupSound: false,
     notifCheck: true,
     systray: true,
-    adhanCheck: true,
     autoStart: true,
     minStart: false
   })
@@ -108,9 +112,8 @@ async function loadSettings(){
     shafaq: 'shafaqG'
   })
 
-  console.log(calculationMethod)
+  delays = await window.api.getFromStore("delays", [5, 10, 10, 5, 10])
   
-  await loadAdhan()
   await loadCustomSettings()
   await loadAdjustments()
 
@@ -138,9 +141,7 @@ async function loadSettings(){
 
   document.getElementById("darkModeCheck").checked = darkMode
   document.getElementById("notifCheck").checked = settings.notifCheck
-  document.getElementById("adhanCheck").checked = settings.adhanCheck
   document.getElementById("systrayCheck").checked = settings.systray
-  document.getElementById("startUpSound").checked = settings.startupSound
   document.getElementById("autoStartCheck").checked = settings.autoStart
   document.getElementById("minStartCheck").checked = settings.minStart
   document.getElementById("MOTNCheck").checked = sunnahTimes.motn
@@ -148,12 +149,17 @@ async function loadSettings(){
   document.getElementById("showSeconds").checked = timeDisplay.showSeconds
   document.getElementById("weatherCheck").checked = weather.enabled
 
+  document.getElementById("fajrDelayInput").value = delays[0]
+  document.getElementById("dhuhrDelayInput").value = delays[1]
+  document.getElementById("asrDelayInput").value = delays[2]
+  document.getElementById("maghribDelayInput").value = delays[3]
+  document.getElementById("ishaDelayInput").value = delays[4]
+
   window.api.setTheme(darkMode, "settings.css");
   addChangeListeners()
   setTimeDateFormat()
   loadLanguage(language)
   loadBgImage()
-  disableAdhanListener()
 }
 
 
@@ -361,148 +367,6 @@ function setSavedVal(element, val){
   }
 }
 
-
-/**
-* Loads the custom/preset Adhan (bool, source path)
-*/
-async function loadAdhan(){
-  adhanFile =  await window.api.getFromStore('adhan', { 
-    adhan: {
-      custom: false,
-      path: "../../ressources/audio/Adhan - Ahmed Al-Nufais.mp3"
-    },
-    adhanFajr: {
-      custom: false,
-      path: "../../ressources/audio/Adhan - Ahmed Al-Nufais.mp3"
-    },
-    dua: { 
-      enabled: true
-    }
-  });
-
-  var customCheck = document.getElementById("customAdhan");
-  customCheck.checked = adhanFile.adhan.custom
-  var duaCheck = document.getElementById("duaCheck");
-  duaCheck.checked = adhanFile.dua.enabled;
-  var customFajrCheck = document.getElementById("customAdhanFajr");
-  customFajrCheck.checked = adhanFile.adhanFajr.custom
-
-
-  document.getElementById('customAdhanFileButton').onclick = function() {
-    document.getElementById('customAdhanFile').click();
-  };
-  document.getElementById('customAdhanFileButton').value = shortenedString(adhanFile.adhan.path.split("/")[adhanFile.adhan.path.split("/").length - 1]) 
-
-  document.getElementById('customAdhanFajrFileButton').onclick = function() {
-    document.getElementById('customAdhanFajrFile').click();
-  };
-  document.getElementById('customAdhanFajrFileButton').value = shortenedString(adhanFile.adhanFajr.path.split("/")[adhanFile.adhanFajr.path.split("/").length - 1]) 
-
-  document.getElementById("customAdhanFajrFile").disabled = !customFajrCheck.checked;
-  document.getElementById('customAdhanFajrFileButton').disabled = !customFajrCheck.checked;
-
-  customFajrCheck.addEventListener("change", function(){
-    document.getElementById("customAdhanFajrFile").disabled = !customFajrCheck.checked;
-    document.getElementById('customAdhanFajrFileButton').disabled = !customFajrCheck.checked;
-  })
-
-  document.getElementById("customAdhanFile").addEventListener("change", function(){
-    var file = document.getElementById("customAdhanFile").files[0].path;
-    document.getElementById('customAdhanFileButton').value = shortenedString(file.split("/")[file.split("/").length - 1]) 
-    console.debug("Loaded: " + file)
-  })
-  document.getElementById("customAdhanFajrFile").addEventListener("change", function(){
-    var file = document.getElementById("customAdhanFajrFile").files[0].path;
-    document.getElementById('customAdhanFajrFileButton').value = shortenedString(file.split("/")[file.split("/").length - 1]) 
-    console.debug("Loaded: " + file)
-  })
-}
-
-function shortenedString(text){
-  if (text.length > 30) return text.substr(0,30);
-  else return text
-}
-
-/**
-* Adds listeners to the many Adhan checkboxes and disables them when they are not used
-*/
-function disableAdhanListener(){
-  var adhanCheck = document.getElementById("adhanCheck")
-  var customAdhanCheck = document.getElementById("customAdhan")
-  disableAdhan()
-  adhanCheck.addEventListener('change', function(){
-    disableAdhan()
-  })
-  
-  customAdhanCheck.addEventListener('change', function(){
-    disableAdhan()
-  })
-  
-  function disableAdhan(){
-    document.getElementById("duaCheck").disabled = !adhanCheck.checked
-    document.getElementById("customAdhan").disabled = !adhanCheck.checked
-    document.getElementById("customAdhanFile").disabled = !adhanCheck.checked || !customAdhanCheck.checked
-    document.getElementById('customAdhanFileButton').disabled = !adhanCheck.checked || !customAdhanCheck.checked
-    document.getElementById("adhanList").disabled = !adhanCheck.checked || customAdhanCheck.checked
-    document.getElementById("customAdhanFajr").disabled = !adhanCheck.checked
-    document.getElementById("customAdhanFajrFile").disabled = !adhanCheck.checked || !document.getElementById("customAdhanFajr").checked
-    document.getElementById("customAdhanFajrFileButton").disabled = !adhanCheck.checked || !document.getElementById("customAdhanFajr").checked
-  }
-}
-
-
-/**
-* Saves Adhan values (bool, source)
-*/
-async function saveAdhan(){
-  var customCheck = document.getElementById("customAdhan");
-  var customFajrCheck = document.getElementById("customAdhanFajr");
-  var duaCheck = document.getElementById("duaCheck");
-  var path;
-  var pathFajr
-  if (!customCheck.checked){
-    path = document.getElementById("adhanList").value;
-  }
-  else {
-    var file = document.getElementById("customAdhanFile").files
-    if (file != undefined && file.length != 0){
-      path = file[0].path;
-    }
-    else{
-      path = adhanFile.adhan.path
-    }
-  }
-
-  if (!customFajrCheck.checked){
-    pathFajr = document.getElementById("adhanList").value;
-  }
-  else {
-    var file = document.getElementById("customAdhanFajrFile").files
-    if (file != undefined && file.length != 0){
-      pathFajr = file[0].path;
-    }
-    else{
-      pathFajr = adhanFile.adhanFajr.path
-    }
-  }
-
-  adhanFile = { adhan: {
-    custom: customCheck.checked,
-    path: path
-    },
-    adhanFajr: {
-      custom: customFajrCheck.checked,
-      path: pathFajr
-    },
-    dua: { 
-      enabled: duaCheck.checked
-    }
-  }
-
-  await window.api.setToStore('adhan', adhanFile)
-}
-
-
 /**
 * Event listener in case the darkmode check changes
 */
@@ -614,7 +478,6 @@ function loadLanguage(lang){
 
   document.getElementById("v-pills-general-tab").innerHTML = '<i class="fa-solid fa-kaaba"></i>  ' +  window.api.getLanguage(lang, "general");
   document.getElementById("v-pills-location-tab").innerHTML = '<i class="fa-solid fa-location-dot"></i>  ' + window.api.getLanguage(lang, "location");
-  document.getElementById("v-pills-audio-tab").innerHTML = '<i class="fa-solid fa-volume-high"></i>  ' + window.api.getLanguage(lang, "audio");
   document.getElementById("v-pills-appearance-tab").innerHTML = '<i class="fa-solid fa-palette"></i>  ' +  window.api.getLanguage(lang, "appearance");
   document.getElementById("v-pills-advanced-tab").innerHTML = '<i class="fa-solid fa-sliders"></i>  ' + window.api.getLanguage(lang, "advanced");
   document.getElementById("v-pills-adjustments-tab").innerHTML = '<i class="fa-solid fa-clock"></i>  ' + window.api.getLanguage(lang, "adjustements");
@@ -637,13 +500,6 @@ function loadLanguage(lang){
   document.getElementById("latText").innerText = window.api.getLanguage(lang, "latitude");
   document.getElementById("lonText").innerText = window.api.getLanguage(lang, "longitude");
   document.getElementById("tzText").innerText = window.api.getLanguage(lang, "timezone");
-  document.getElementById("adhanText").innerText = window.api.getLanguage(lang, "adhan");
-  document.getElementById("adhanCheckText").innerText = window.api.getLanguage(lang, "adhanCheck");
-  //document.getElementById("adhanMeccaText").innerText = window.api.getLanguage(lang, "adhanMecca");
-  //document.getElementById("adhanAqsaText").innerText = window.api.getLanguage(lang, "adhanAqsa");
-  document.getElementById("customAdhanText").innerText = window.api.getLanguage(lang, "customAdhan");
-  document.getElementById("duaAfterText").innerText = window.api.getLanguage(lang, "duaAfterAdhan");
-  document.getElementById("duaCheckText").innerHTML  = window.api.getLanguage(lang, "playDua");
   document.getElementById("themeText").innerText = window.api.getLanguage(lang, "theme");
   document.getElementById("darkModeText").innerText = window.api.getLanguage(lang, "darkMode");
   document.getElementById("bgImageText").innerText = window.api.getLanguage(lang, "bgImage");
@@ -680,8 +536,6 @@ function loadLanguage(lang){
   document.getElementById("autoStartCheckText").innerText = window.api.getLanguage(lang, "startAtLaunch");
   document.getElementById("quote").innerText = window.api.getLanguage(lang, "quote");
   document.getElementById("source").innerText = window.api.getLanguage(lang, "source");
-  document.getElementById("startUpSoundText").innerText = window.api.getLanguage(lang, "startUpSound");
-  document.getElementById("startUpSoundText2").innerText = window.api.getLanguage(lang, "playSound");
   document.getElementById("systrayText").innerText = window.api.getLanguage(lang, "sysTray");
   document.getElementById("systrayCheckText").innerText = window.api.getLanguage(lang, "minToTray");
   document.getElementById("customSettText").innerText = window.api.getLanguage(lang, "customSettings");
@@ -703,8 +557,7 @@ function loadLanguage(lang){
   document.getElementById("MOTNCheckText").innerText = window.api.getLanguage(lang, "motn");
   document.getElementById("TOTNCheckText").innerText = window.api.getLanguage(lang, "totn");
   document.getElementById("minStartCheckText").innerText = window.api.getLanguage(lang, "minStart");
-  document.getElementById("adhanMecca").innerHTML = window.api.getLanguage(lang, "AdhanMecca");
-  document.getElementById("adhanAqsa").innerHTML  = window.api.getLanguage(lang, "adhanAqsa");
+
 
   document.getElementById("weatherText").innerHTML  = window.api.getLanguage(lang, "weather");
   document.getElementById("weatherCheckText").innerHTML  = window.api.getLanguage(lang, "showWeather");
@@ -712,9 +565,6 @@ function loadLanguage(lang){
   document.getElementById("celsius").innerHTML  = window.api.getLanguage(lang, "celsius");
   document.getElementById("kelvin").innerHTML  = window.api.getLanguage(lang, "kelvin");
   document.getElementById("fahrenheit").innerHTML  = window.api.getLanguage(lang, "fahrenheit");  
-
-  document.getElementById("adhanAhmed").innerText = window.api.getLanguage(lang, "adhan") + " - " + window.api.getLanguage(lang, "ahmedNufeis")
-  document.getElementById("customAdhanFajrText").innerHTML  = window.api.getLanguage(lang, "customFajr"); 
 }
 
 
@@ -855,4 +705,9 @@ function loadFont(){
   if (language != "ar" && language != "bn"){
     document.body.style.fontFamily = 'quicksand'
   }
+}
+
+function shortenedString(text){
+  if (text.length > 30) return text.substr(0,30);
+  else return text
 }

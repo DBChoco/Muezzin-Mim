@@ -62,13 +62,26 @@ body{
     border-radius: 0.6vh;
 }
 
-.grid-container {
+#boxContainer{
+    display: flex;
+    flex-direction: row;
     margin: auto;
-    margin-bottom: 1vh;
+}
+
+.grid-container {
+    margin-right: 4vh;
     display: grid;
     grid-template-columns:  auto auto;
     width: 48vh;
     border-radius: 0 0 0.5vh 0.5vh;
+}
+
+.delay-container {
+    margin-top: 0.8vh;
+    display: grid;
+    grid-template-columns: auto;
+    width: fit-content;
+    border-radius: 0.5vh;
 }
 
 .grid-item {
@@ -92,24 +105,12 @@ body{
 
 .right{
     text-align: right;
-}
-
-.box-bottom{
-    text-align: center;
+    display: flex;
+    flex-direction: row-reverse;
 }
 
 .box{
-    margin: auto 0 auto 0;
-    align-items: center;
     user-select:text;
-}
-
-#calendar{
-    height: max(25px, 3vh);
-    font-size: max(12px, 1.5vh);
-    border-radius: max(5px, 0.5vh);
-    border: 0px;
-    padding: 5px;
 }
 
 #buttons{
@@ -183,7 +184,18 @@ body{
 
 #prayerProgressContainer{
     width: 48vh;
-    margin: 0 auto 0 auto;
-    height: 8px;
+    margin: -1.5vh 4vh 0 auto;
+    height: 0.8vh;
     border-radius: 0.5vh 0.5vh 0 0 ;
+}
+
+.prayerTime, .delay{
+    margin: 0;
+}
+
+.delay{
+}
+
+#fajrDelay{
+    border-top: 0px;
 }
