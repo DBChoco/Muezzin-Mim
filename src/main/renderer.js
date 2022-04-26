@@ -44,16 +44,12 @@ window.addEventListener('loadedSettings', () => {
 })
 
 window.addEventListener('loadedUI', () => {
-  volumeSlider()
   setKeyPress()
-  setupButtonListeners()
   setupUpdateModal()
   setupBorders()
   setProgress()
   loadedUI = true;
   hideLoader()
-
-  setupTasbih()
 
   window.api.send('loadedUI');
 })
@@ -480,20 +476,6 @@ async function loadClockDisplay(){
 }
 
 
-//Sets event listeners and IPCRenderers to make volume sliders work
-function volumeSlider(){
-  var volSlider = document.getElementById('volSlider');
-  volSlider.value = volume
-  volSlider.addEventListener('pointermove', function(){
-    window.api.send('volume-request', volSlider.value);
-  })
-  volSlider.addEventListener('change', function(){
-    window.api.send('volume-request', volSlider.value);
-    window.api.setToStore('volume', volSlider.value)
-  })
-}
-
-
 //Hides the media player in case the Adhan is disabled
 async function hidePlayer(){
   var enableAdhan = await window.api.getFromStore('settings.adhanCheck', true)
@@ -557,53 +539,8 @@ function loadLang(){
   document.getElementById('asr').innerText = langAsr
   document.getElementById('maghrib').innerText = langMaghrib
   document.getElementById('isha').innerText = langIsha
-  document.getElementById('settingsWheel').innerHTML = '<i class="fa fa-cog" aria-hidden="true"></i>  ' +  window.api.getLanguage(lang, 'settings')
   document.getElementById('motn').innerText = window.api.getLanguage(lang, 'motn')
   document.getElementById('totn').innerText = window.api.getLanguage(lang, 'totn')
-}
-
-function setupButtonListeners(){
-  document.getElementById('playB').addEventListener("click", function(){
-    window.api.send("play");
-  })
-  document.getElementById('stopB').addEventListener("click", function(){
-    window.api.send("stop");
-  })
-  document.getElementById('settingsWheel').addEventListener("click", function(){
-    window.api.send("settingsO");
-    window.location.href = "../settings/settings.html";
-  })
-}
-
-function setupTasbih(){
-  let tasbih = 0
-  let countdown;
-  document.getElementById('title').addEventListener("click", function(){
-    startTasbih()}
-  )
-
-  document.addEventListener('keydown', function(key){
-    if (key.key == "Enter" || key.key == " ") startTasbih()
-    else if (key.key == "Escape" || key.key == "Backspace" || key.key == "Delete") resetTasbih()
-  })
-
-  document.getElementById('title').addEventListener("contextmenu", function(){
-    resetTasbih()
-  })
-
-  function startTasbih(){
-    tasbih ++
-    document.getElementById('tasbih').innerHTML = '  | ' + '<i class="fa-solid fa-star-and-crescent"></i>  ' + tasbih
-    if (countdown != undefined) clearTimeout(countdown)
-    countdown = setTimeout(function(){
-      resetTasbih()
-    }, 10000)
-  }
-
-  function resetTasbih(){
-    tasbih = 0
-    document.getElementById('tasbih').innerHTML = ""
-  }
 }
 
 function setupSunnah(){

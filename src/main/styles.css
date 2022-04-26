@@ -113,31 +113,6 @@ body{
     user-select:text;
 }
 
-#buttons{
-    margin-left: auto;
-}
-
-#settingsWheel , #quranButton{
-    margin: 10px;
-    font-size: max(1.8vh, 15px);
-}
-
-#stopB, #playB{
-    margin: 10px;
-    font-size: max(1.5vh, 14px);
-}
-
-#volume{
-    margin-left: 10px;
-    display: flex;
-    align-items: center;
-    font-size: x-large;
-}
-
-.fa-volume-down, .fa-volume-up{
-    font-size: max(2vh, 20px);
-}
-
 #mainContainer{
     width: fit-content;
     display: flex;
@@ -150,15 +125,6 @@ body{
     align-content: center;
 }
 
-#audioControls, #upperPart{
-    flex-direction: row;
-    display: flex;
-    align-items: center;
-}
-
-#volSlider{
-    margin: 0px 10px 0px 10px;
-}
 
 .center{
     position: absolute; 
